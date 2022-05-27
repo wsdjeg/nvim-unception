@@ -9,6 +9,14 @@ if 1 ~= vim.fn.has "nvim-0.7.0" then
     return
 end
 
+local function get_pid()
+    local handle = io.popen("echo $$")
+    pid_str = handle:read("*a")
+    handle:close()
+    pid_str = string.gsub(pid_str, "\n", "")
+    return pid_str
+end
+
 local function exists(filename)
    local ok, message, err_code = os.rename(filename, filename)
    if not ok then
@@ -57,7 +65,19 @@ local function build_command(arg_str, number_of_args, server_address)
 end
 
 local username = os.getenv("USER")
-local expected_pipe_name = "/tmp/nvim-"..username..".pipe"
+local pid_str = get_pid()
+
+--TODO: Updated design:
+-- doesn't matter if pipe exists, rely on other info to tell you
+-- whether or not to clobber it. on launch, check if
+-- /tmp/unception_host_active_pid exists if it does, get the pid from
+-- it, check in procfs if the pid is actively used, and if so, send a
+-- command to the server, and otherwise clobber the pipe and make your
+-- own server
+
+
+local expected_pipe_name = "/tmp/nvim-"..username.."-pid"..pid_str..".pipe"
+print (expected_pipe_name)
 --TODO use tmpdir environment variable
 --TODO: Checking if the pipe exists probably isn't sufficient. Should instead
 --check if the pipe is currently attached to a Neovim session.
